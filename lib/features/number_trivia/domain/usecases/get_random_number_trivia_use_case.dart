@@ -8,7 +8,7 @@ class GetRandomNumberTriviaUseCase {
 
   final NumberTriviaRepository repository;
 
-  Future<Either<Failure, NumberTrivia>> call(int number) async {
-    return await repository.getConcreteNumberTrivia(number);
+  Future<Either<Failure, NumberTrivia>> call() async {
+    return await repository.getRandomNumberTrivia();
   }
 }
