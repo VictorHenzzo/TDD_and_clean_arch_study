@@ -21,6 +21,21 @@ void main() {
       networkInfo: networkInfo,
     );
   });
+
+  group('getConcreteNumberTrivia', () {
+    final testNumber = 1;
+    test('should check if the device is online', () async {
+      // arrange
+      when(() => networkInfo.deviceIsConnected)
+          .thenAnswer((final _) async => true);
+
+      // act
+      sut.getConcreteNumberTrivia(testNumber);
+
+      // assert
+      verify(() => networkInfo.deviceIsConnected);
+    });
+  });
 }
 
 class NumberTriviaLocalDatasourceMock extends Mock
