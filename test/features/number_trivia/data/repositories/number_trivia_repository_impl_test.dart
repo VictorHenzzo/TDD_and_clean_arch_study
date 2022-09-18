@@ -1,8 +1,12 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:tdd_study/core/error/exceptions.dart';
+import 'package:tdd_study/core/error/failures.dart';
 import 'package:tdd_study/core/platform/network_info.dart';
 import 'package:tdd_study/features/number_trivia/data/datasources/number_trivia_local_datasource.dart';
 import 'package:tdd_study/features/number_trivia/data/datasources/number_trivia_remote_datasource.dart';
+import 'package:tdd_study/features/number_trivia/data/models/number_trivia_model.dart';
 import 'package:tdd_study/features/number_trivia/data/repositories/number_trivia_repository_impl.dart';
 
 void main() {
@@ -23,7 +27,10 @@ void main() {
   });
 
   group('getConcreteNumberTrivia', () {
-    final testNumber = 1;
+    const testNumber = 1;
+    const testNumberTriviaModel =
+        NumberTriviaModel(number: 1, text: 'Test text');
+
     test('should check if the device is online', () async {
       // arrange
       when(() => networkInfo.deviceIsConnected)
@@ -34,6 +41,97 @@ void main() {
 
       // assert
       verify(() => networkInfo.deviceIsConnected);
+    });
+
+    group('device is online', () {
+      setUp(() {
+        when(() => networkInfo.deviceIsConnected)
+            .thenAnswer((final _) async => true);
+      });
+
+      test(
+          'should return remote data when the call to remote data source is successful',
+          () async {
+        // arrange
+        when(() => remoteDatasource.getConcreteNumberTrivia(1))
+            .thenAnswer((final _) async => testNumberTriviaModel);
+
+        // act
+        final result = await sut.getConcreteNumberTrivia(1);
+
+        // assert
+        verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
+        expect(result, equals(const Right(testNumberTriviaModel)));
+      });
+
+      test(
+          'should cache the data locally when the call to remote data source is successful',
+          () async {
+        // arrange
+        when(() => remoteDatasource.getConcreteNumberTrivia(any()))
+            .thenAnswer((final _) async => testNumberTriviaModel);
+
+        // act
+        await sut.getConcreteNumberTrivia(testNumber);
+
+        // assert
+        verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
+        verify(() => localDatasource.cacheNumberTrivia(testNumberTriviaModel));
+      });
+    });
+
+    test(
+        'should return server failure when the call to remote data source is unsuccessful',
+        () async {
+      // arrange
+      when(() => remoteDatasource.getConcreteNumberTrivia(any()))
+          .thenThrow(ServerException());
+
+      // act
+      final result = await sut.getConcreteNumberTrivia(testNumber);
+
+      // assert
+      verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
+      verifyZeroInteractions(localDatasource);
+      expect(result, equals(Left(ServerFailure())));
+    });
+
+    group('device is offline', () {
+      setUp(() {
+        when(() => networkInfo.deviceIsConnected)
+            .thenAnswer((final _) async => false);
+      });
+
+      test(
+          'should return last locally cached data when the cached data is present',
+          () async {
+        // arrange
+        when(() => localDatasource.getLastNumberTrivia())
+            .thenAnswer((final _) async => testNumberTriviaModel);
+
+        // act
+        final result = await sut.getConcreteNumberTrivia(testNumber);
+
+        // assert
+        verifyZeroInteractions(remoteDatasource);
+        verify(() => localDatasource.getLastNumberTrivia());
+        expect(result, equals(const Right(testNumberTriviaModel)));
+      });
+
+      test('should return cache failure when there is no cached data present',
+          () async {
+        // arrange
+        when(() => localDatasource.getLastNumberTrivia())
+            .thenThrow(CacheException());
+
+        // act
+        final result = await sut.getConcreteNumberTrivia(testNumber);
+
+        // assert
+        verifyZeroInteractions(remoteDatasource);
+        verify(() => localDatasource.getLastNumberTrivia());
+        expect(result, equals(Left(CacheFailure())));
+      });
     });
   });
 }
