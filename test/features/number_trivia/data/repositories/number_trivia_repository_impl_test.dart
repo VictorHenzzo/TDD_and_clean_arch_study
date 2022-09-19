@@ -35,6 +35,10 @@ void main() {
       // arrange
       when(() => networkInfo.deviceIsConnected)
           .thenAnswer((final _) async => true);
+      when(() => localDatasource.cacheNumberTrivia(testNumberTriviaModel))
+          .thenAnswer((final _) async => true);
+      when(() => remoteDatasource.getConcreteNumberTrivia(testNumber))
+          .thenAnswer((final _) async => testNumberTriviaModel);
 
       // act
       sut.getConcreteNumberTrivia(testNumber);
@@ -50,50 +54,38 @@ void main() {
       });
 
       test(
-          'should return remote data when the call to remote data source is successful',
+          'should return remote data when the call to remote data source is successful, and then should cache the data locally',
           () async {
         // arrange
         when(() => remoteDatasource.getConcreteNumberTrivia(1))
             .thenAnswer((final _) async => testNumberTriviaModel);
+        when(() => localDatasource.cacheNumberTrivia(testNumberTriviaModel))
+            .thenAnswer((final _) async => true);
 
         // act
         final result = await sut.getConcreteNumberTrivia(1);
 
         // assert
         verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
+        verify(() => localDatasource.cacheNumberTrivia(testNumberTriviaModel));
         expect(result, equals(const Right(testNumberTriviaModel)));
       });
 
       test(
-          'should cache the data locally when the call to remote data source is successful',
+          'should return server failure when the call to remote data source is unsuccessful',
           () async {
         // arrange
         when(() => remoteDatasource.getConcreteNumberTrivia(any()))
-            .thenAnswer((final _) async => testNumberTriviaModel);
+            .thenThrow(ServerException());
 
         // act
-        await sut.getConcreteNumberTrivia(testNumber);
+        final result = await sut.getConcreteNumberTrivia(testNumber);
 
         // assert
         verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
-        verify(() => localDatasource.cacheNumberTrivia(testNumberTriviaModel));
+        verifyZeroInteractions(localDatasource);
+        expect(result, equals(Left(ServerFailure())));
       });
-    });
-
-    test(
-        'should return server failure when the call to remote data source is unsuccessful',
-        () async {
-      // arrange
-      when(() => remoteDatasource.getConcreteNumberTrivia(any()))
-          .thenThrow(ServerException());
-
-      // act
-      final result = await sut.getConcreteNumberTrivia(testNumber);
-
-      // assert
-      verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
-      verifyZeroInteractions(localDatasource);
-      expect(result, equals(Left(ServerFailure())));
     });
 
     group('device is offline', () {
