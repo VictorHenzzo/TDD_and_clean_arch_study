@@ -32,7 +32,7 @@ void main() {
         const NumberTriviaModel(number: 1, text: 'Test text');
   });
 
-  group('getConcreteNumberTrivia', () {
+  group('getTrivia with arguments', () {
     const testNumber = 1;
     const testNumberTriviaModel =
         NumberTriviaModel(number: 1, text: 'Test text');
@@ -47,7 +47,7 @@ void main() {
           .thenAnswer((final _) async => testNumberTriviaModel);
 
       // act
-      sut.getConcreteNumberTrivia(testNumber);
+      sut.getTrivia(testNumber);
 
       // assert
       verify(() => networkInfo.deviceIsConnected);
@@ -69,7 +69,7 @@ void main() {
             .thenAnswer((final _) async => true);
 
         // act
-        final result = await sut.getConcreteNumberTrivia(testNumber);
+        final result = await sut.getTrivia(testNumber);
 
         // assert
         verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
@@ -85,7 +85,7 @@ void main() {
             .thenThrow(ServerException());
 
         // act
-        final result = await sut.getConcreteNumberTrivia(testNumber);
+        final result = await sut.getTrivia(testNumber);
 
         // assert
         verify(() => remoteDatasource.getConcreteNumberTrivia(testNumber));
@@ -108,7 +108,7 @@ void main() {
             .thenAnswer((final _) async => testNumberTriviaModel);
 
         // act
-        final result = await sut.getConcreteNumberTrivia(testNumber);
+        final result = await sut.getTrivia(testNumber);
 
         // assert
         verifyZeroInteractions(remoteDatasource);
@@ -123,7 +123,7 @@ void main() {
             .thenThrow(CacheException());
 
         // act
-        final result = await sut.getConcreteNumberTrivia(testNumber);
+        final result = await sut.getTrivia(testNumber);
 
         // assert
         verifyZeroInteractions(remoteDatasource);
@@ -144,7 +144,7 @@ void main() {
           .thenAnswer((final _) async => testNumberTriviaModel);
 
       // act
-      sut.getRandomNumberTrivia();
+      sut.getTrivia(null);
 
       // assert
       verify(() => networkInfo.deviceIsConnected);
@@ -166,7 +166,7 @@ void main() {
             .thenAnswer((final _) async => true);
 
         // act
-        final result = await sut.getRandomNumberTrivia();
+        final result = await sut.getTrivia(null);
 
         // assert
         verify(() => remoteDatasource.getRandomNumberTrivia());
@@ -182,7 +182,7 @@ void main() {
             .thenThrow(ServerException());
 
         // act
-        final result = await sut.getRandomNumberTrivia();
+        final result = await sut.getTrivia(null);
 
         // assert
         verify(() => remoteDatasource.getRandomNumberTrivia());
@@ -205,7 +205,7 @@ void main() {
             .thenAnswer((final _) async => testNumberTriviaModel);
 
         // act
-        final result = await sut.getRandomNumberTrivia();
+        final result = await sut.getTrivia(null);
 
         // assert
         verifyZeroInteractions(remoteDatasource);
@@ -220,7 +220,7 @@ void main() {
             .thenThrow(CacheException());
 
         // act
-        final result = await sut.getRandomNumberTrivia();
+        final result = await sut.getTrivia(null);
 
         // assert
         verifyZeroInteractions(remoteDatasource);
